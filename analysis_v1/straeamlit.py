@@ -1,112 +1,156 @@
 import streamlit as st
 import pandas as pd
-# from fundamental_a import  calculate_composite_scores, main
-from opt_f import   main
+import  opt_f as f
 from analyse import analysis_stocks
+from news_fetch import extract_news
 
-# Load data from CSV
-data = pd.read_csv('./indian_stocks.csv')  # Updated to use indian_stocks.csv
+@st.cache_data
+def load_data():
+    try:
+        data = pd.read_csv('./indian_stocks.csv')
+        data['market_cap_category'] = data['market_cap'].apply(categorize_market_cap)
+        return data
+    except Exception as e:
+        st.error(f"Error loading data: {e}")
+        return pd.DataFrame()  # Return an empty DataFrame on error
 
-# Function to categorize stocks by market cap
-def categorize_market_cap(row):
-    market_cap = int(row['market_cap'])
-    if market_cap >= 10000000000:  # Large-cap
+def categorize_market_cap(market_cap):
+    if market_cap >= 10_000_000_000:
         return 'Large Cap'
-    elif market_cap >= 5000000000:  # Mid-cap
+    elif market_cap >= 5_000_000_000:
         return 'Mid Cap'
-    else:  # Small-cap
-        return 'Small Cap'
+    return 'Small Cap'
 
-# Apply categorization
-data['market_cap_category'] = data.apply(categorize_market_cap, axis=1)
+def get_unique_values(data, column):
+    return sorted(data[column].unique())
 
-# Function to get unique sectors and industries
-def get_sectors_and_industries(data):
-    sectors = data['sector'].unique()  # Updated to use 'sector'
-    industries = data['industry'].unique()  # Updated to use 'industry'
-    return sectors, industries
+def filter_stocks(data, filters):
+    for column, value in filters.items():
+        if value != "All":
+            data = data[data[column] == value]
+    return data
 
-# Sidebar for navigation
-st.sidebar.title("Navigation")
-option = st.sidebar.selectbox("Select a section", ["Research Industry", "Analyze Single Stock", "Best Stocks in Industry"])
+def display_stocks(stocks):
+    st.write(stocks[['symbol', 'name', 'industry', 'sector', 'market_cap_category']])
 
-if option == "Research Industry":
+def calculate_score(stocks, number_of_stocks=10):
+    if stocks.empty:
+        st.warning("No stocks available to calculate scores.")
+        return None  # Return None if no stocks are available
+
+    stocks_symbols = [f"{symbol}.BO" for symbol in stocks['symbol']]
+    st.header("Calculate Composite score stocks", divider=True)
+    
+    # Fetch data only if stocks_symbols is not empty
+    if stocks_symbols:
+        industry_stocks_df = f.main(stocks_symbols, top_n=number_of_stocks)
+        st.write(industry_stocks_df)
+        return industry_stocks_df
+    else:
+        st.warning("No stock symbols available for calculation.")
+        return None
+
+def select_option(data, column, label, default="All"):
+    options = ["All"] + get_unique_values(data, column)
+    return st.selectbox(label, options, index=options.index(default))
+
+def research_industry(data):
     st.title("Research Industry Best Stocks")
     
-    # Get sectors and industries
-    sectors, industries = get_sectors_and_industries(data)
+    sector = select_option(data, 'sector', "Choose Sector")
+    filtered_data = filter_stocks(data, {'sector': sector})
     
-    # Dropdown for sector selection
-    selected_sector = st.selectbox("Choose Sector", sectors)
+    industry = select_option(filtered_data, 'industry', "Choose Industry")
+    filtered_data = filter_stocks(filtered_data, {'industry': industry})
     
-    # Filter industries based on selected sector
-    filtered_industries = data[data['sector'] == selected_sector]['industry'].unique()  # Updated to use 'sector'
-    selected_industry = st.selectbox("Choose Industry", filtered_industries)
+    market_cap = select_option(filtered_data, 'market_cap_category', "Choose Market Cap Category")
+    filtered_data = filter_stocks(filtered_data, {'market_cap_category': market_cap})
     
-    # Filter stocks based on selected industry
-    industry_stocks = data[data['industry'] == selected_industry]
+    display_stocks(filtered_data)
     
-    # Dropdown for market cap selection
-    market_cap_option = st.selectbox("Choose Market Cap Category", ["All", "Large Cap", "Mid Cap", "Small Cap"])
-    
-    # Filter stocks based on market cap selection
-    if market_cap_option != "All":
-        industry_stocks = industry_stocks[industry_stocks['market_cap_category'] == market_cap_option]
-    
+    # Only calculate score if filtered_data is not empty
+    if not filtered_data.empty:
+        industry_stocks_df = calculate_score(filtered_data)
 
-    # calculate composite score and valuation 
-    # industry_stocks['scored'] = industry_stocks.apply(calculate_composite_score, axis=1)
-    stocks_symbols = [symbol+'.BO' for symbol in industry_stocks['symbol'].to_list()]
-    print(stocks_symbols)
-    industry_stocks_df = main(stocks_symbols)
+        if st.button("Analyze the Top Stock"):
+            st.experimental_set_query_params(page="top_stock_analysis")
+            symbols_stocks = industry_stocks_df.index.tolist()
+            # formatted_str = analysis_stocks(symbols_stocks)
+            st.write("")
+    else:
+        st.warning("No stocks available after filtering.")
 
-    # Show filtered stocks
-    st.write(industry_stocks[['symbol', 'name', 'industry', 'sector', 'market_cap_category']])
-
-    st.header("Caclulate Composite score stocks", divider=True)
-
-    st.write(industry_stocks_df)
-
-    symbols_stocks = [symbol for symbol in industry_stocks_df.index.to_list()]
-
-    # Add a button to analyze the top stock
-    if st.button("Analyze the Top Stock"):
-        # Redirect to another page
-        st.experimental_set_query_params(page="top_stock_analysis")
-
-# Check if the page query parameter is set to "top_stock_analysis"
-if st.experimental_get_query_params().get("page") == ["top_stock_analysis"]:
-    st.title("Top Stock Analysis")
-    
-    # Call the function to get the formatted string
-    formatted_str = analysis_stocks(symbols_stocks)
-    
-    # Display the formatted string
-    st.write(formatted_str)
-
-elif option == "Analyze Single Stock":
+def analyze_single_stock(data):
     st.title("Analyze a Single Stock")
-    ticker = st.text_input("Enter Stock Ticker")
-    if ticker:
-        # Fetch and display stock data (you can integrate your existing functions here)
-        st.write(f"Analyzing {ticker}...")
+    selected_ticker = st.selectbox("Select a Stock Ticker", get_unique_values(data, 'name'))
+    if selected_ticker:
+        st.write(f"Analyzing {selected_ticker}...")
+        
+        stock_details = data[data['name'] == selected_ticker]
+        if stock_details.empty:
+            st.error("No stock details found.")
+            return
+        stock_details = stock_details.iloc[0]
 
-elif option == "Best Stocks in Industry":
-    st.title("Best Stocks in Industry")
-    # Logic to display best stocks (you can integrate your existing functions here)
-    st.write("Displaying best stocks...")
+        # Uncomment if needed
+        # print(str(stock_details['symbol']))
+        # news = extract_news([str(stock_details['symbol'])])
+        # print(news)
+        # st.write(f"News of  {selected_ticker}...")
+        # st.write(news[0])
 
-# New section to categorize stocks by market cap
-st.sidebar.title("Market Cap Categories")
-cap_option = st.sidebar.selectbox("Select Market Cap Category", ["All", "Large Cap", "Mid Cap", "Small Cap"])
+        filtered_data = filter_stocks(data, {
+            'industry': stock_details['industry'],
+            'sector': stock_details['sector'],
+            'market_cap_category': stock_details['market_cap_category']
+        })
+        calculate_score(filtered_data)
 
-if cap_option != "All":
-    if cap_option == "Large Cap":
-        filtered_data = data[data['market_cap_category'] == 'Large Cap']
-    elif cap_option == "Mid Cap":
-        filtered_data = data[data['market_cap_category'] == 'Mid Cap']
-    else:  # Small Cap
-        filtered_data = data[data['market_cap_category'] == 'Small Cap']
+def search_stock(data):
+    st.title("Search Stock by Sector and Market Cap")
+    search_query = st.text_input("Search for Stock Symbol", "")
     
-    st.write(f"{cap_option} Stocks:")
-    st.write(filtered_data[['symbol', 'name', 'industry', 'sector', 'market_cap_category']])  # Display market cap category
+    if search_query:
+        filtered_data = data[data['name'].str.contains(search_query, case=False)].head(5)
+        if not filtered_data.empty:
+            selected_stock = st.selectbox("Select a Stock", filtered_data['name'].tolist())
+            stock_details = filtered_data[filtered_data['name'] == selected_stock].iloc[0]
+            display_stocks(pd.DataFrame([stock_details]))
+            
+            sector = select_option(data, 'sector', "Choose Sector", default=stock_details['sector'])
+            market_cap = select_option(data, 'market_cap_category', "Choose Market Cap Category", default=stock_details['market_cap_category'])
+            
+            filtered_data = filter_stocks(data, {'sector': sector, 'market_cap_category': market_cap})
+            display_stocks(filtered_data)
+            
+            if st.button("Analyze Selected Stock"):
+                st.experimental_set_query_params(page="selected_stock_analysis", stock=stock_details['symbol'])
+        else:
+            st.write("No matching stocks found.")
+    else:
+        st.write("Enter a stock name to search.")
+
+def display_market_cap_category(data):
+    st.sidebar.title("Market Cap Categories")
+    cap_option = st.sidebar.selectbox("Select Market Cap Category", ["All", "Large Cap", "Mid Cap", "Small Cap"])
+    if cap_option != "All":
+        filtered_data = filter_stocks(data, {'market_cap_category': cap_option})
+        st.write(f"{cap_option} Stocks:")
+        display_stocks(filtered_data)
+
+def main():
+    data = load_data()
+    st.sidebar.title("Navigation")
+    option = st.sidebar.selectbox("Select a section", ["Research Industry", "Analyze Single Stock", "Search Stock"])
+
+    if option == "Research Industry":
+        research_industry(data)
+    elif option == "Analyze Single Stock":
+        analyze_single_stock(data)
+    elif option == "Search Stock":
+        search_stock(data)
+    
+    display_market_cap_category(data)
+
+if __name__ == "__main__":
+    main()

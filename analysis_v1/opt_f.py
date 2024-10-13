@@ -138,6 +138,7 @@ def main(tickers, custom_weights=None, top_n = 3):
     # Plotting scores
     # plot_scores(ranked_stocks)
     
+    print(len(ranked_stocks))
     return ranked_stocks.iloc[:top_n]
 
 if __name__ == "__main__":
