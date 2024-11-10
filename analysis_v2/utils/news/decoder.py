@@ -7,6 +7,8 @@ from collections import OrderedDict
 import requests
 from bs4 import BeautifulSoup
 
+certification_path = "/Users/mohd.nauman/Downloads/StockAdvisor/analysis_v2/utils/news/zyte-ca.crt"
+
 def get_decoding_params(gn_art_id: str, gn_url: str, index: int, zyte_proxy) -> Dict[str, Any]:
     """
     Fetches decoding parameters for a given Google News article ID.
@@ -19,7 +21,7 @@ def get_decoding_params(gn_art_id: str, gn_url: str, index: int, zyte_proxy) -> 
     response = requests.get(
         f"https://news.google.com/articles/{gn_art_id}", 
         proxies=zyte_proxy, 
-        verify='/Users/mohd.nauman/Downloads/StockAdvisor/news_exports/zyte-ca.crt'
+        verify=certification_path
     )
     response.raise_for_status()
     soup = BeautifulSoup(response.text, "lxml")
@@ -54,7 +56,7 @@ def decode_urls(articles: List[Dict[str, Any]], zyte_proxy=None) -> List[Dict[st
     
     if zyte_proxy:
         proxies = zyte_proxy
-        verify = '/Users/mohd.nauman/Downloads/StockAdvisor/news_exports/zyte-ca.crt'
+        verify = certification_path
     else:
         verify = True
 

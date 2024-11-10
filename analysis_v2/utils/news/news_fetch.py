@@ -128,7 +128,7 @@ def fetch_stock_news(
     """
     
     db = NewsDatabase()
-    name = StockMetadataDB().get_stock_info(symbol=symbol)['name']
+    name = StockMetadataDB().get_stock_info(symbol=symbol).name
     # Get cache status
     cached_news, latest_date, needs_update, latest_date = db.get_cache_status(symbol)
     
