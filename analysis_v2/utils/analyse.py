@@ -1,11 +1,11 @@
-from get_fundamental import get_top_20_ratios_and_results
+from utils.get_fundamental import get_top_20_ratios_and_results
 
 import os
 import google.generativeai as genai
 # Load model directly
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 import torch 
-from news_fetch import extract_news
+from utils.news import fetch_stock_news
 
 tokenizer = AutoTokenizer.from_pretrained("phanerozoic/BART-Large-CNN-Enhanced")
 model = AutoModelForSeq2SeqLM.from_pretrained("phanerozoic/BART-Large-CNN-Enhanced")
@@ -127,7 +127,7 @@ def generate_data(symbols):
           temp_data = get_top_20_ratios_and_results(symbol)
           # print("get fundamental data --",time.time()-star_time)
           # star_time = time.time()
-          temp_data['news'] = extract_news(symbol)
+          temp_data['news'] = fetch_stock_news(symbol)
           # print("get news data --",time.time()-star_time)
           stock_data[symbol] = temp_data
     except Exception as e:

@@ -1,0 +1,43 @@
+2024-10-22 12:31:53,871 - INFO - Database initialized successfully
+2024-10-22 12:31:56,029 - INFO - Fetching news from MoneyControl: Found 15 articles
+2024-10-22 12:31:58,199 - INFO - Fetching news from EconomicTimes_Markets: Found 50 articles
+2024-10-22 12:32:01,075 - INFO - Fetching news from Tickertape: Found 10 articles
+2024-10-22 12:32:01,111 - INFO - Exported 75 articles to financial_news_20241022.csv
+2024-10-22 12:32:41,415 - INFO - Database initialized successfully
+2024-10-22 12:32:43,715 - INFO - Fetching news from MoneyControl: Found 15 articles
+2024-10-22 12:32:45,870 - INFO - Fetching news from EconomicTimes_Markets: Found 50 articles
+2024-10-22 12:32:48,652 - INFO - Fetching news from Tickertape: Found 10 articles
+2024-10-22 12:32:48,670 - INFO - Exported 75 articles to financial_news_20241022.csv
+2024-10-22 12:34:58,117 - INFO - Database initialized successfully
+2024-10-22 12:35:00,359 - INFO - Fetching news from MoneyControl: Found 15 articles
+2024-10-22 12:35:02,540 - INFO - Fetching news from EconomicTimes_Markets: Found 50 articles
+2024-10-22 12:35:05,186 - INFO - Fetching news from Tickertape: Found 10 articles
+2024-10-22 12:37:18,557 - INFO - Database initialized successfully
+2024-10-22 12:37:20,674 - INFO - Fetching news from MoneyControl: Found 15 articles
+2024-10-22 12:37:22,898 - INFO - Fetching news from EconomicTimes_Markets: Found 50 articles
+2024-10-22 12:37:25,521 - INFO - Fetching news from Tickertape: Found 10 articles
+2024-10-22 12:42:09,481 - INFO - Database initialized successfully
+2024-10-22 12:42:11,674 - INFO - Fetching news from MoneyControl: Found 15 articles
+2024-10-22 12:42:13,893 - INFO - Fetching news from EconomicTimes_Markets: Found 50 articles
+2024-10-22 12:42:16,495 - INFO - Fetching news from Tickertape: Found 10 articles
+2024-10-22 12:42:16,523 - INFO - Exported 75 articles to financial_news_20241022.csv
+2024-10-28 02:37:44,125 - INFO - Database initialized successfully
+2024-10-28 02:37:46,278 - INFO - Fetching news from MoneyControl: Found 15 articles
+2024-10-28 02:37:48,515 - INFO - Fetching news from EconomicTimes_Markets: Found 50 articles
+2024-10-28 02:37:51,385 - INFO - Fetching news from Tickertape: Found 10 articles
+2024-10-28 02:37:51,431 - INFO - Exported 60 articles to financial_news_20241028.csv
+2024-10-28 02:40:22,715 - INFO - Database initialized successfully
+2024-10-28 02:40:24,956 - INFO - Fetching news from MoneyControl: Found 15 articles
+2024-10-28 02:40:27,166 - INFO - Fetching news from EconomicTimes_Markets: Found 50 articles
+2024-10-28 02:40:29,857 - INFO - Fetching news from Tickertape: Found 10 articles
+2024-10-28 02:40:29,893 - INFO - Exported 60 articles to financial_news_20241028.csv
+2024-10-28 02:41:22,609 - INFO - Database initialized successfully
+2024-10-28 02:41:24,753 - INFO - Fetching news from MoneyControl: Found 15 articles
+2024-10-28 02:41:26,936 - INFO - Fetching news from EconomicTimes_Markets: Found 50 articles
+2024-10-28 02:41:29,513 - INFO - Fetching news from Tickertape: Found 10 articles
+2024-10-28 02:41:29,545 - INFO - Exported 60 articles to financial_news_20241028.csv
+2024-10-28 02:42:47,039 - INFO - Database initialized successfully
+2024-10-28 02:42:49,151 - INFO - Fetching news from MoneyControl: Found 15 articles
+2024-10-28 02:42:51,303 - INFO - Fetching news from EconomicTimes_Markets: Found 50 articles
+2024-10-28 02:42:53,891 - INFO - Fetching news from Tickertape: Found 10 articles
+2024-10-28 02:42:53,915 - INFO - Exported 60 articles to financial_news_20241028.csv

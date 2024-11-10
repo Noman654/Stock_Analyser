@@ -1,25 +1,19 @@
 import streamlit as st
 import pandas as pd
-import  opt_f as f
-from analyse import analysis_stocks
-from news_fetch import extract_news
+import utils.opt_f as f
+from utils.analyse import analysis_stocks
 
 @st.cache_data
 def load_data():
     try:
-        data = pd.read_csv('./indian_stocks.csv')
+        data = pd.read_csv('/Users/mohd.nauman/Downloads/StockAdvisor/analysis_v2/data/indian_stocks.csv')
         data['market_cap_category'] = data['market_cap'].apply(categorize_market_cap)
         return data
     except Exception as e:
         st.error(f"Error loading data: {e}")
         return pd.DataFrame()  # Return an empty DataFrame on error
 
-def categorize_market_cap(market_cap):
-    if market_cap >= 10_000_000_000:
-        return 'Large Cap'
-    elif market_cap >= 5_000_000_000:
-        return 'Mid Cap'
-    return 'Small Cap'
+
 
 def get_unique_values(data, column):
     return sorted(data[column].unique())
@@ -63,7 +57,7 @@ def research_industry(data):
     industry = select_option(filtered_data, 'industry', "Choose Industry")
     filtered_data = filter_stocks(filtered_data, {'industry': industry})
     
-    market_cap = select_option(filtered_data, 'market_cap_category', "Choose Market Cap Category")
+    market_cap = select_option(filtered_data, 'market_cap_category', "Choose formatted_str Cap Category")
     filtered_data = filter_stocks(filtered_data, {'market_cap_category': market_cap})
     
     display_stocks(filtered_data)
@@ -71,12 +65,12 @@ def research_industry(data):
     # Only calculate score if filtered_data is not empty
     if not filtered_data.empty:
         industry_stocks_df = calculate_score(filtered_data)
-
+        st.write(industry_stocks_df)
         if st.button("Analyze the Top Stock"):
             st.experimental_set_query_params(page="top_stock_analysis")
             symbols_stocks = industry_stocks_df.index.tolist()
-            # formatted_str = analysis_stocks(symbols_stocks)
-            st.write("")
+            formatted_str = analysis_stocks(symbols_stocks)
+            st.write(formatted_str)
     else:
         st.warning("No stocks available after filtering.")
 

@@ -2,6 +2,7 @@ import yfinance as yf
 import pandas as pd
 import numpy as np
 import logging
+import multiprocessing as mp
 import matplotlib.pyplot as plt
 
 # Configure logging
@@ -64,6 +65,7 @@ def z_score_normalization(data):
 
 def calculate_composite_scores(df, weights=default_weights):
     """Calculate composite scores based on normalized financial metrics."""
+    df.set_index(['Company Name', df.index], inplace=True)
     normalized_data = df.apply(z_score_normalization, axis=0)  # Normalize each column
     composite_score = (normalized_data * pd.Series(weights)).sum(axis=1)
     df['Composite Score'] = composite_score
@@ -72,6 +74,8 @@ def calculate_composite_scores(df, weights=default_weights):
 def calculate_valuation_score(df):
     """Calculate the valuation score based on normalized valuation metrics."""
     # Invert metrics where lower is better
+    if df.empty:
+        return df
     inverted_valuation_data = {
         'P/E Ratio': -df['P/E Ratio'],
         'P/B Ratio': -df['P/B Ratio'],
@@ -81,6 +85,7 @@ def calculate_valuation_score(df):
     
     # Create a DataFrame for inverted metrics
     inverted_df = pd.DataFrame(inverted_valuation_data)
+
 
     # Normalize the valuation metrics
     normalized_valuation_data = inverted_df.apply(z_score_normalization, axis=0)  
@@ -107,19 +112,45 @@ def plot_scores(df):
     plt.tight_layout()
     plt.show()
 
-def main(tickers, custom_weights=None, top_n = 3):
+def main(symbols_and_name, custom_weights=None):
     """Main function to process stocks and calculate composite and valuation scores."""
     stock_data_list = []
 
-    # Fetch data for each stock
-    for ticker in tickers:
+    def fetch_and_append(ticker, stock_data_list):
         stock_data = get_financial_data(ticker)
         if stock_data:
             stock_data_list.append(stock_data)
 
-    # Convert the list to DataFrame
-    df = pd.DataFrame(stock_data_list, index=tickers)
+    # Create a manager list to share data between processes
+    # manager = mp.Manager()
+    # stock_data_list = manager.list()
 
+    # # Create a pool of workers
+    # with mp.Pool(processes=mp.cpu_count()) as pool:
+    #     pool.starmap(fetch_and_append, [(ticker, stock_data_list) for ticker in tickers])
+
+    # Convert the manager list to a regular list
+    # stock_data_list = list(stock_data_list)
+
+    # stock_data_list = [get_financial_data(ticker[0]) for ticker in symbols_and_name]
+
+    # # Convert the list to DataFrame
+    # df = pd.DataFrame(stock_data_list, index=tickers)
+
+    stock_data_dict = {}
+    
+    # Fetch data and store in dictionary with ticker as key
+    for ticker, company_name in symbols_and_name:
+        data = get_financial_data(ticker)
+        if data:
+            data['Company Name'] = company_name  # Add company name to the data
+            stock_data_dict[ticker] = data
+
+    df = pd.DataFrame.from_dict(stock_data_dict, orient='index')  
+
+    if df.empty:
+        logging.error("No data available. Exiting.")
+        return df
     # Use custom weights if provided
     weights_to_use = custom_weights if custom_weights else default_weights
 
@@ -139,7 +170,7 @@ def main(tickers, custom_weights=None, top_n = 3):
     # plot_scores(ranked_stocks)
     
     print(len(ranked_stocks))
-    return ranked_stocks.iloc[:top_n]
+    return ranked_stocks
 
 if __name__ == "__main__":
     # Example custom weights (optional)
