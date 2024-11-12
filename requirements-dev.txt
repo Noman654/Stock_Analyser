@@ -1,0 +1,9 @@
+google.generativeai
+pymongo
+transformers
+torch
+feedparser
+newspaper3k
+flasgger
+montydb
+duckdb

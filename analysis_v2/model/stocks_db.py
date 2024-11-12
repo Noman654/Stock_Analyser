@@ -3,7 +3,6 @@ from typing import Optional, Dict, Any, List
 from datetime import datetime
 import os
 from enum import Enum
-from pymongo import DESCENDING
 from dataclasses import dataclass
 from .base_db import BaseDB
 
@@ -59,68 +58,71 @@ class StockInfo:
 
 
 class StockMetadataDB(BaseDB):
-    def __init__(self, connection_string=None):
+    def __init__(self, db_name="stock_metadata", storage_dir="stock_data"):
         super().__init__(
-            connection_string=connection_string,
-            db_name="stock_metadata",
-            storage_dir="stock_data"
+            db_name=db_name,
+            storage_dir=storage_dir
         )
-        self.stock_collection = self.db.stocks
         self.init_db()
 
     def init_db(self):
-        """Initialize database indexes using helper method"""
-        self.stock_collection.create_index([("symbol", DESCENDING)], unique=True)
-        self.stock_collection.create_index([("sector", DESCENDING)])
-        self.stock_collection.create_index([("industry", DESCENDING)])
-        self.stock_collection.create_index([("market_cap", DESCENDING)])
-
+        """Initialize database indexes"""
+        self.execute_query("""
+            CREATE TABLE IF NOT EXISTS stocks (
+                symbol TEXT PRIMARY KEY,
+                name TEXT,
+                industry TEXT,
+                sector TEXT,
+                market_cap INTEGER,
+                exchange TEXT,
+                market_cap_category TEXT,
+                updated_at TIMESTAMP
+            );
+        """)
+    
     def save_data(self, stocks_data: List[Dict[str, Any]]):
-        """Cache stock information"""
+        """Cache stock information in tables"""
         for stock_dict in stocks_data:
-            try:
-                # Create a new dictionary for the update
-                update_dict = stock_dict.copy()
-                
-                # Convert market_cap to int if it's a string
-                if isinstance(update_dict["market_cap"], str):
-                    update_dict["market_cap"] = int(float(update_dict["market_cap"]))
-                
-                # Calculate market_cap_category
-                update_dict["market_cap_category"] = categorize_market_cap(update_dict["market_cap"])
-                
-                # Add timestamp
-                update_dict["updated_at"] = datetime.utcnow()
-                
-                # Perform the update
-                self.stock_collection.replace_one(
-                    {"symbol": update_dict["symbol"]},
-                    update_dict,
-                    upsert=True
-                )
-            except (ValueError, TypeError) as e:
-                print(f"Error processing stock {stock_dict.get('symbol')}: {str(e)}")
-                continue
+            stock_info = StockInfo.from_dict(stock_dict)
+            stock_info.market_cap_category = categorize_market_cap(stock_info.market_cap)
+            stock_info.updated_at = datetime.utcnow()
+
+            self.execute_query("""
+                INSERT INTO stocks (symbol, name, industry, sector, market_cap, exchange, market_cap_category, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(symbol) DO UPDATE SET
+                    name=excluded.name,
+                    industry=excluded.industry,
+                    sector=excluded.sector,
+                    market_cap=excluded.market_cap,
+                    exchange=excluded.exchange,
+                    market_cap_category=excluded.market_cap_category,
+                    updated_at=excluded.updated_at;
+            """, stock_info.to_dict())
 
     def get_stock_info(self, symbol: str) -> Optional[StockInfo]:
         """Get stock information by symbol"""
-        result = self.stock_collection.find_one({"symbol": symbol})
-        return StockInfo.from_dict(result) if result else None
+        result = self.execute_query("SELECT * FROM stocks WHERE symbol = ?", {"symbol": symbol})
+        return StockInfo.from_dict(result[0]) if result else None
 
     def get_stocks(self, industry: Optional[str] = None, sector: Optional[str] = None) -> List[StockInfo]:
         """Get stocks filtered by industry and sector"""
-        query = {}
+        query = "SELECT * FROM stocks WHERE 1=1"
+        params = {}
         if industry and industry != "all":
-            query["industry"] = industry
+            query += " AND industry = ?"
+            params["industry"] = industry
         if sector and sector != "all":
-            query["sector"] = sector
+            query += " AND sector = ?"
+            params["sector"] = sector
         
-        results = self.stock_collection.find(query)
+        results = self.execute_query(query, params)
         return [StockInfo.from_dict(result) for result in results]
 
     def get_all_sectors(self) -> List[str]:
         """Get a list of all sectors"""
-        return self.stock_collection.distinct("sector")
+        results = self.execute_query("SELECT DISTINCT sector FROM stocks")
+        return [row[0] for row in results]
 
     def get_industries_by_sector(self, sector: Optional[str] = None) -> List[str]:
         """Get a list of industries by sector"""
@@ -156,7 +158,7 @@ class StockMetadataDB(BaseDB):
 def main():
     # Example usage
     import pandas as pd 
-    data = pd.read_csv('/Users/mohd.nauman/Downloads/StockAdvisor/analysis_v2/data/indian_stocks.csv')
+    data = pd.read_csv('analysis_v2/data/indian_stocks.csv')
     
     sample_data = data.to_dict(orient="records")
     # Initialize database
