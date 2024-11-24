@@ -1,5 +1,5 @@
-import { AdvancedStockScreenerComponent } from "@/components/advanced-stock-screener"
+import { AdvancedStockScreener } from "@/components/advanced-stock-screener"
 
 export default function Page() {
-  return <AdvancedStockScreenerComponent />
+  return <AdvancedStockScreener />
 }
