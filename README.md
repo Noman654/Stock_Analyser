@@ -23,3 +23,4 @@ Welcome to the Stock Analysis API project using uAgents! This project leverages 
 - **Analysis using [Gemini](https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/overview)**: Perform analysis on a stock based on its fundamentals and quarterly results on Gemini 1.0 Pro.
 
 ## Installation 
+adding readme
