@@ -19,3 +19,11 @@ matplotlib
 streamlit
 plotly
 Flask[async]
+pymongo
+google-generativeai
+transformer
+pytorch 
+feedparser 
+newspaper3k
+lxml[html_clean]
+flasgger
